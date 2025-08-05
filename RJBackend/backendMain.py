@@ -4,7 +4,6 @@ import multiprocessing as mp
 import reader
 
 def main():
-    reader.test()
     mp.freeze_support()
     earlyKill = mp.Value('b', False)
     for line in sys.stdin:
@@ -17,7 +16,7 @@ def main():
                 print("OK DIR")
                 scanProc = mp.Process(target = reader.analyse, args = (earlyKill, dir))
                 scanProc.start()
-                #scanProc.join()                    
+                #scanProc.join()      
             else:
                 print("E0")
         else:
