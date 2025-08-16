@@ -1,6 +1,5 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
-const { spawn } = require('child_process');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -13,10 +12,13 @@ const createWindow = () => {
     width: 800,
     height: 600,
     webPreferences: {
+      sandbox: false,
+      webSecurity: false,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
-
+  //mainWindow.setMenuBarVisibility(false);
+  mainWindow.setMenu(null);
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
@@ -29,22 +31,6 @@ const createWindow = () => {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   createWindow();
-  //also load in the python backend.
-  backendPath = "C:\\Users\\Aditya.D.S\\Documents\\PythonScripts\\DEAMTrainer\\dist\\RJBackend\\RJBackend.exe"
-  pyProc = spawn(backendPath, []);
-
-  pyProc.stdout.on('data', (data) => {
-    console.log(`PY: ${data}`);
-  });
-
-  pyProc.stderr.on('data', (data) => {
-    console.error(`PY ERR: ${data}`);
-  });
-
-  pyProc.on('close', (code) => {
-    console.log(`Python process exited with code ${code}`);
-  });
-
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   app.on('activate', () => {
@@ -65,3 +51,17 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+ipcMain.on('aze-button-click', (event, arg) => {
+  console.log('Button was clicked! Message:', arg);
+});
+
+
+setTimeout(() => {
+  const win = BrowserWindow.getAllWindows()[0];
+  toSend =  [
+    { title: "TestSong1", artist: "TestArtist1", src: "X:\\Music\\miwu.mp3" },
+    { title: "TestSong2", artist: "TestArtist2", src: "miwu.mp3" },
+    { title: "TestSong3", artist: "TestArtist3", src: "miwu.mp3" }
+  ];
+  win.webContents.send("playlist-updated", toSend);
+}, 1000);

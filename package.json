@@ -12,10 +12,7 @@
     "lint": "echo \"No linting configured\""
   },
   "keywords": [],
-  "author": {
-    "name": "Aditya.D.S",
-    "email": "aditya.devendran.s@gmail.com"
-  },
+  "author": "Aditya.D.S <aditya.devendran.s@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1"
@@ -29,6 +26,14 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.8.2",
     "@electron-forge/plugin-fuses": "^7.8.2",
     "@electron/fuses": "^2.0.0",
-    "electron": "37.2.5"
-  }
+    "electron": "^37.2.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DS-Aditya-928/robot-jockey.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DS-Aditya-928/robot-jockey/issues"
+  },
+  "homepage": "https://github.com/DS-Aditya-928/robot-jockey#readme"
 }
