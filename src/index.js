@@ -55,25 +55,6 @@ const createWindow = () =>
 app.whenReady().then(() =>
 {
   createWindow();
-  //also load in the python backend.
-  const backendPath = path.join(__dirname, '../RJB')
-  pyProc = spawn(backendPath, []);
-
-  pyProc.stdout.on('data', (data) =>
-  {
-    console.log(`PY: ${data}`);
-  });
-
-  pyProc.stderr.on('data', (data) =>
-  {
-    console.error(`PY ERR: ${data}`);
-  });
-
-  pyProc.on('close', (code) =>
-  {
-    console.log(`Python process exited with code ${code}`);
-  });
-
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   app.on('activate', () =>
