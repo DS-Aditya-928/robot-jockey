@@ -7,6 +7,7 @@ import { loadSettings, saveSettings } from './mini-store.js';
 import electronSquirrelStartup from 'electron-squirrel-startup';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { parseFile } from 'music-metadata';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const settings = loadSettings();
@@ -54,6 +55,8 @@ const createWindow = () =>
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 let pyProc;
+let beRdy = false;
+
 app.whenReady().then(() =>
 {
   createWindow();
@@ -67,6 +70,12 @@ app.whenReady().then(() =>
   });
   */
   pyProc.stdout.on('data', (data) => {
+    data = data.toString().trim();
+    if(data.endsWith("OK")) {
+      beRdy = true;
+    }
+
+
     console.log(`PY: ${data}`);
   });
 
@@ -101,21 +110,10 @@ app.on('window-all-closed', () =>
 // code. You can also put them in separate files and import them here.
 async function getMP3(rootFolder)
 {
-  const model = await onnx.InferenceSession.create(path.join(__dirname, '../Models/ONNX_DEAM.onnx'));
-
-  console.log(model.inputMetadata);
-  console.log("ONNX Model loaded successfully");
-
-  const data = Float32Array.from({ length: (1 * 1 * 128 * 431) }, () => Math.random());
-  const randInput = new onnx.Tensor("float32", data, [1, 1, 128, 431]);
-  const output = await model.run({ input: randInput });
-  console.log("Output:", output);
   let results = [];
   let foldersToScan = [rootFolder];
 
   while (foldersToScan.length > 0) {
-    console.log("writing to pyproc");
-    pyProc.stdin.write("can\r\n");
     const currentFolder = foldersToScan.pop();
     const files = fs.readdirSync(currentFolder, { withFileTypes: true });
 
@@ -127,10 +125,9 @@ async function getMP3(rootFolder)
       }
 
       else {
-        /*
         try {
           //console.log(`Found MP3: ${metaData.common.title} by ${metaData.common.artist}`);
-          const metaData = await md.parseFile(fullPath);
+          const metaData = await parseFile(fullPath);
           console.log({
             path: fullPath,
             title: metaData.common.title || path.basename(file.name, ".mp3"),
@@ -138,10 +135,17 @@ async function getMP3(rootFolder)
             album: metaData.common.album || "Unknown Album",
             duration: metaData.format.duration || 0,
           });
-        } catch (err) {
+
+          beRdy = false;
+          pyProc.stdin.write(`S${fullPath}\r\n`);
+          while(beRdy === false) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
+
+        catch (err) {
           console.error(`Error reading metadata for ${fullPath}:`, err.message);
         }
-          */
       }
     }
   }
