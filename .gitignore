@@ -94,3 +94,6 @@ out/
 #pyinstaller stuff
 dist/
 build/
+
+#Models
+Models/*

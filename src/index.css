@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: "Open Sans", sans-serif;
   display: grid;
   grid-template-columns: 220px 1fr;
   grid-template-rows: auto 1fr 90px;
@@ -28,12 +28,13 @@ body {
       #ff0099,
       #ffae00,
       #6a00f4,
-      /*#007bff,*/
+      #007bff,
       #8a2be2);
   background-size: 500% 500%;
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: gradientText 10s ease infinite;
+  animation: gradientText 5s ease infinite;
 }
 
 @keyframes gradientText {

@@ -3,7 +3,11 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  azeButtonClicked: (msg) => ipcRenderer.send('aze-button-click', msg),
   getPlaylist: async () => await ipcRenderer.invoke('get-playlist'),
-  onPlaylistUpdate: (callback) => ipcRenderer.on("playlist-updated", (_, data) => callback(data))
+  
+  onPlaylistUpdate: (callback) => ipcRenderer.on("playlist-updated", (_, data) => callback(data)),
+  onLibraryUpdate: (callback) => ipcRenderer.on("library-updated", (_, data) => callback(data)),
+
+  selectPath: () => ipcRenderer.invoke("select-path"),
+  scanLibrary: () => ipcRenderer.invoke("scan-library")
 });
