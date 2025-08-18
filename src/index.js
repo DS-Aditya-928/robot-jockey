@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import {spawn} from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
 import onnx from 'onnxruntime-node';
@@ -52,9 +53,30 @@ const createWindow = () =>
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+let pyProc;
 app.whenReady().then(() =>
 {
   createWindow();
+  const backendPath = path.join(__dirname, '../RJBackend/rjbackend/rjbackend.exe');
+  pyProc = spawn(backendPath, [], {
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+  /*
+  pyProc = spawn('python', [ path.join(__dirname, '../RJBackend/rjbackend.py')], {
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+  */
+  pyProc.stdout.on('data', (data) => {
+    console.log(`PY: ${data}`);
+  });
+
+  pyProc.stderr.on('data', (data) => {
+    console.error(`PY ERR: ${data}`);
+  });
+
+  pyProc.on('close', (code) => {
+    console.log(`Python process exited with code ${code}`);
+  });
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   app.on('activate', () =>
@@ -92,6 +114,8 @@ async function getMP3(rootFolder)
   let foldersToScan = [rootFolder];
 
   while (foldersToScan.length > 0) {
+    console.log("writing to pyproc");
+    pyProc.stdin.write("can\r\n");
     const currentFolder = foldersToScan.pop();
     const files = fs.readdirSync(currentFolder, { withFileTypes: true });
 
@@ -103,28 +127,8 @@ async function getMP3(rootFolder)
       }
 
       else {
+        /*
         try {
-
-          const melSpectrogram = await extractMelSpectrogram({
-            fileUri: fullPath,
-            windowSizeMs: 25,
-            hopLengthMs: 10,
-            nMels: 40
-          });
-
-          /*
-          const fileBuffer = await fs.readFileSync(fullPath);
-          
-          const musicBuffer = fileBuffer.buffer.slice(
-            fileBuffer.byteOffset,
-            fileBuffer.byteOffset + fileBuffer.byteLength
-          );
-          
-          //const audioBuffer = await decodeAudio(fileBuffer); 
-          //console.log("Sample rate:", audioBuffer.sampleRate);
-
-          
-          */
           //console.log(`Found MP3: ${metaData.common.title} by ${metaData.common.artist}`);
           const metaData = await md.parseFile(fullPath);
           console.log({
@@ -137,6 +141,7 @@ async function getMP3(rootFolder)
         } catch (err) {
           console.error(`Error reading metadata for ${fullPath}:`, err.message);
         }
+          */
       }
     }
   }
@@ -147,7 +152,7 @@ async function getMP3(rootFolder)
 
 ipcMain.handle("scan-library", async () =>
 {
-  folderPath = settings.musicDir;
+  const folderPath = settings.musicDir;
   if (folderPath === undefined || folderPath === null || folderPath === "") {
     console.error("Invalid music directory");
     return [];
