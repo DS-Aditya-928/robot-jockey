@@ -1,21 +1,18 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
-const path = require('node:path');
-const fs = require('node:fs');
-const md = require('music-metadata');
-const onnx = require('onnxruntime-node');
-//import { extractMelSpectrogram } from '@siteed/expo-audio-studio';
-//const extractAudioAnalysis = require('@siteed/expo-audio-studio');
-//import decodeAudio from 'audio-decode';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import path from 'node:path';
+import fs from 'node:fs';
+import onnx from 'onnxruntime-node';
+import { loadSettings, saveSettings } from './mini-store.js';
+import electronSquirrelStartup from 'electron-squirrel-startup';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const { loadSettings, saveSettings } = require('./mini-store.js');
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const settings = loadSettings();
-
-//let audioBuffer = await decode(buffer);
-//const  {loadSettings, saveSettings} = require(path.join(__dirname, 'mini-store.js'))
 
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
+if (electronSquirrelStartup) {
   app.quit();
 }
 
@@ -59,18 +56,21 @@ app.whenReady().then(() =>
 {
   createWindow();
   //also load in the python backend.
-  backendPath = "C:\\Users\\Aditya.D.S\\Documents\\PythonScripts\\DEAMTrainer\\dist\\RJBackend\\RJBackend.exe"
+  const backendPath = path.join(__dirname, '../RJB')
   pyProc = spawn(backendPath, []);
 
-  pyProc.stdout.on('data', (data) => {
+  pyProc.stdout.on('data', (data) =>
+  {
     console.log(`PY: ${data}`);
   });
 
-  pyProc.stderr.on('data', (data) => {
+  pyProc.stderr.on('data', (data) =>
+  {
     console.error(`PY ERR: ${data}`);
   });
 
-  pyProc.on('close', (code) => {
+  pyProc.on('close', (code) =>
+  {
     console.log(`Python process exited with code ${code}`);
   });
 
@@ -124,18 +124,13 @@ async function getMP3(rootFolder)
       else {
         try {
 
-          const analysis = await extractAudioAnalysis({
+          const melSpectrogram = await extractMelSpectrogram({
             fileUri: fullPath,
-            features: {
-              energy: true,     // Overall energy of the audio
-              rms: true,        // Root mean square (amplitude)
-              zcr: true,        // Zero-crossing rate
-              mfcc: true,       // Mel-frequency cepstral coefficients
-              spectralCentroid: true,  // Brightness of sound
-              tempo: true,      // Estimated BPM
-            }
+            windowSizeMs: 25,
+            hopLengthMs: 10,
+            nMels: 40
           });
-          
+
           /*
           const fileBuffer = await fs.readFileSync(fullPath);
           
@@ -147,9 +142,10 @@ async function getMP3(rootFolder)
           //const audioBuffer = await decodeAudio(fileBuffer); 
           //console.log("Sample rate:", audioBuffer.sampleRate);
 
-          const metaData = await md.parseFile(fullPath);
+          
           */
           //console.log(`Found MP3: ${metaData.common.title} by ${metaData.common.artist}`);
+          const metaData = await md.parseFile(fullPath);
           console.log({
             path: fullPath,
             title: metaData.common.title || path.basename(file.name, ".mp3"),
@@ -182,7 +178,7 @@ ipcMain.handle("scan-library", async () =>
 setTimeout(() =>
 {
   const win = BrowserWindow.getAllWindows()[0];
-  toSend = [
+  const toSend = [
     { title: "TestSong1", artist: "TestArtist1", src: "X:\\Music\\miwu.mp3" },
     { title: "TestSong2", artist: "TestArtist2", src: "mizu.mp3" },
     { title: "TestSong3", artist: "TestArtist3", src: "miwu.mp3" }
