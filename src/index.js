@@ -26,13 +26,10 @@ const createWindow = () =>
     width: 800,
     height: 600,
     webPreferences: {
-      sandbox: false,
-      webSecurity: false,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
-  //mainWindow.setMenuBarVisibility(false);
-  mainWindow.setMenu(null);
+
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
@@ -61,6 +58,22 @@ const createWindow = () =>
 app.whenReady().then(() =>
 {
   createWindow();
+  //also load in the python backend.
+  backendPath = "C:\\Users\\Aditya.D.S\\Documents\\PythonScripts\\DEAMTrainer\\dist\\RJBackend\\RJBackend.exe"
+  pyProc = spawn(backendPath, []);
+
+  pyProc.stdout.on('data', (data) => {
+    console.log(`PY: ${data}`);
+  });
+
+  pyProc.stderr.on('data', (data) => {
+    console.error(`PY ERR: ${data}`);
+  });
+
+  pyProc.on('close', (code) => {
+    console.log(`Python process exited with code ${code}`);
+  });
+
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   app.on('activate', () =>
