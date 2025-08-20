@@ -227,3 +227,21 @@ body {
   font-size: 40px;
   line-height: 0.9;
 }
+
+.playlist ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* Optional: dark theme scrollbar styling */
+.playlist ul::-webkit-scrollbar,
+#libraryList::-webkit-scrollbar {
+  width: 8px;
+}
+
+.playlist ul::-webkit-scrollbar-track {
+  background: #181818;
+}

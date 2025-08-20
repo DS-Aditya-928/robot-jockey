@@ -11,7 +11,8 @@ const scanBtn = document.getElementById("scanLibrary");
 const libraryList = document.getElementById("libraryList");
 
 let songs = [];
-let currentIndex = 0;
+let currentIndex = 0; //which song is currently playing
+let currentAddIndex = 0;
 let isPlaying = false;
 
 function highlightSong()
@@ -30,7 +31,7 @@ function highlightSong()
 function loadSong(index)
 {
     if (!songs[index]) return;
-    audio.src = "file:///X:/Downloads/miwu.mp3";
+    audio.src = songs[index].src;
     audio.play();
     currentIndex = index;
     highlightSong();
@@ -97,15 +98,17 @@ audio.addEventListener("ended", () =>
     loadSong(currentIndex);
 });
 
+//these functions should only add new entries.
+
 window.electronAPI.onPlaylistUpdate((newPlaylist) =>
 {
-    songs = newPlaylist;
+    //songs = newPlaylist;
     renderPlaylist(playlist, newPlaylist);
 });
 
 window.electronAPI.onLibraryUpdate((newLibrary) =>
 {
-    songs = newLibrary;
+    //songs = newLibrary;
     renderPlaylist(libraryList, newLibrary);
 });
 
@@ -144,5 +147,5 @@ scanBtn.addEventListener("click", async () =>
 {
     const songs = await window.electronAPI.scanLibrary();
 
-    libraryList.innerHTML = songs.map(song => `<li>${song.title} - ${song.artist}</li>`).join("");
+    //libraryList.innerHTML = songs.map(song => `<li>${song.title} - ${song.artist}</li>`).join("");
 });

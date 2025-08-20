@@ -2,16 +2,27 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import {spawn} from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
-import onnx from 'onnxruntime-node';
 import { loadSettings, saveSettings } from './mini-store.js';
 import electronSquirrelStartup from 'electron-squirrel-startup';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { parseFile } from 'music-metadata';
+import { performance } from 'node:perf_hooks';
+import Database from 'better-sqlite3'
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const settings = loadSettings();
 
+const musicDB = new Database(path.join(__dirname, '../music.db'));
+let x  = musicDB.prepare(`
+    CREATE TABLE IF NOT EXISTS tracks (
+    title TEXT NOT NULL,
+    artist TEXT NOT NULL,
+    album TEXT NOT NULL,
+    arousal REAL DEFAULT 0.0,
+    valence REAL DEFAULT 0.0
+  )
+`).run();
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (electronSquirrelStartup) {
@@ -55,7 +66,9 @@ const createWindow = () =>
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 let pyProc;
-let beRdy = false;
+let backendStart = false;
+let backendRdy = false;
+let inpData = "";
 
 app.whenReady().then(() =>
 {
@@ -71,12 +84,19 @@ app.whenReady().then(() =>
   */
   pyProc.stdout.on('data', (data) => {
     data = data.toString().trim();
-    if(data.endsWith("OK")) {
-      beRdy = true;
+    if(data.endsWith("RDY")) 
+    {
+      console.log("Backend ready");
+      backendStart = true;  
+      return;
     }
 
-
-    console.log(`PY: ${data}`);
+    if(data.endsWith("OK"))
+    {
+      backendRdy = true;
+    }
+    inpData += data;
+    //console.log(`PY: ${data}`);
   });
 
   pyProc.stderr.on('data', (data) => {
@@ -112,7 +132,9 @@ async function getMP3(rootFolder)
 {
   let results = [];
   let foldersToScan = [rootFolder];
+  let totalTime = 0;
 
+  let startTime = performance.now();
   while (foldersToScan.length > 0) {
     const currentFolder = foldersToScan.pop();
     const files = fs.readdirSync(currentFolder, { withFileTypes: true });
@@ -128,6 +150,7 @@ async function getMP3(rootFolder)
         try {
           //console.log(`Found MP3: ${metaData.common.title} by ${metaData.common.artist}`);
           const metaData = await parseFile(fullPath);
+          /*
           console.log({
             path: fullPath,
             title: metaData.common.title || path.basename(file.name, ".mp3"),
@@ -135,21 +158,42 @@ async function getMP3(rootFolder)
             album: metaData.common.album || "Unknown Album",
             duration: metaData.format.duration || 0,
           });
+          */
+          let title = metaData.common.title || path.basename(file.name);
+          let artist = metaData.common.artists ? metaData.common.artists.join("/") : "Unknown Artist";
+          let album = metaData.common.album || "Unknown Album";
+          
 
-          beRdy = false;
+          backendRdy = false;
           pyProc.stdin.write(`S${fullPath}\r\n`);
-          while(beRdy === false) {
+          totalTime += metaData.format.duration || 0;
+          while(backendRdy === false) {
             await new Promise(resolve => setTimeout(resolve, 100));
           }
+
+          let [arousal, valence] = inpData.split(' ').map(s => parseFloat(s));
+          //const [arousal, valence] = inpData.split(' ').map(Number);
+          console.log(metaData.common.title);
+          console.log("Arousal: ", arousal, "Valence: ", valence);
+          results.push({title: title, artist: artist, album: album, src: fullPath});
+          inpData = "";
+
+          const win = BrowserWindow.getAllWindows()[0];
+          win.webContents.send("library-updated", results);
         }
 
         catch (err) {
-          console.error(`Error reading metadata for ${fullPath}:`, err.message);
+          //console.error(`Error reading metadata for ${fullPath}:`, err.message);
         }
       }
+
+      
     }
   }
-
+  let endTime = performance.now();
+  console.log("Scan complete");
+  console.log(`Total scan time: ${endTime - startTime} ms`);
+  console.log(`Scanned ${totalTime} seconds of audio`);
   return results;
 }
 
@@ -165,13 +209,3 @@ ipcMain.handle("scan-library", async () =>
   return getMP3(folderPath);
 });
 
-setTimeout(() =>
-{
-  const win = BrowserWindow.getAllWindows()[0];
-  const toSend = [
-    { title: "TestSong1", artist: "TestArtist1", src: "X:\\Music\\miwu.mp3" },
-    { title: "TestSong2", artist: "TestArtist2", src: "mizu.mp3" },
-    { title: "TestSong3", artist: "TestArtist3", src: "miwu.mp3" }
-  ];
-  win.webContents.send("library-updated", toSend);
-}, 1000);

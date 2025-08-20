@@ -26,6 +26,7 @@
     "audio-buffer": "^5.0.0",
     "audio-decode": "^2.2.3",
     "audio-lena": "^2.3.0",
+    "better-sqlite3": "^12.2.0",
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^10.1.0",
     "music-metadata": "^11.8.2",
