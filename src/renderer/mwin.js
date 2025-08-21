@@ -103,13 +103,13 @@ audio.addEventListener("ended", () =>
 window.electronAPI.onPlaylistUpdate((newPlaylist) =>
 {
     //songs = newPlaylist;
-    renderPlaylist(playlist, newPlaylist);
+    songs = renderPlaylist(playlist, newPlaylist);
 });
 
 window.electronAPI.onLibraryUpdate((newLibrary) =>
 {
     //songs = newLibrary;
-    renderPlaylist(libraryList, newLibrary);
+    songs = renderPlaylist(libraryList, newLibrary);
 });
 
 updatePlayPause();

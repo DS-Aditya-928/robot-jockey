@@ -1,5 +1,5 @@
 import sys
-import os
+from io import TextIOWrapper
 import time as t
 import librosa
 import numpy as np
@@ -12,6 +12,7 @@ def main():
     ort_session = InferenceSession(
     "C:\\NNModels\\ONNX_DEAM.onnx", providers=["CPUExecutionProvider"]
     )
+    sys.stdin = TextIOWrapper(sys.stdin.buffer, encoding="utf-8")
     print("RDY", flush=True)
 
     for line in sys.stdin:
@@ -19,6 +20,8 @@ def main():
             # start cmd rec
             t1 = t.time()
             mPath = line[len("S"):].strip()
+            #mPath = 'X:\\Music\\Olivia Rodrigo\\GUTS\\11 - pretty isn’t pretty.mp3'
+            #mPath = 'X:\\Music\\Olivia Rodrigo\\GUTS\\12 - teenage dream.mp3'
             #print(f"path: {mPath}", flush=True)
 
             samples, sr = sf.read(mPath, dtype='float32', always_2d=True)
