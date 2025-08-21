@@ -1,14 +1,13 @@
 function renderPlaylist(l, songsNew)
 {
-    
+
     const curHTML = libraryList.querySelector(`li[data-index="${currentIndex}"]`);
 
-    if(curHTML)
-    {
+    if (curHTML) {
         console.log(`current playing: ${curHTML.innerHTML}`);
     }
     l.innerHTML = "";
-    
+
     songsNew.sort((a, b) =>
     {
         const artistCmp = a.artist.split("/")[0].localeCompare(b.artist.split("/")[0]);
@@ -22,27 +21,28 @@ function renderPlaylist(l, songsNew)
     songsNew.forEach((song, i) =>
     {
         const li = document.createElement("li");
-        li.innerHTML = `${song.title} <span>${song.artist}</span>`;
-        if (l.textContent.includes(li.textContent)) {
+        li.innerHTML = `<li class="song-item">
+        <span class="title">${song.title}</span>
+        <span class="album">${song.album}</span>
+        <span class="artist">${song.artist}</span>
+        </li>`;
+        if (l.textContent.includes(`>${li.textContent}<`)) {
+            console.log(`Skipping duplicate song: ${song.title} by ${song.artist}`);
             return;
         }
 
-        if(curHTML)
-        {
-            if (li.innerHTML === curHTML.innerHTML)
-            {
+        if (curHTML) {
+            if (li.innerHTML === curHTML.innerHTML) {
                 li.classList.add("active");
                 currentIndex = globalIndex;
             }
         }
 
-        else if(globalIndex == 0)
-        {
+        else if (globalIndex == 0) {
             li.classList.add("active");
         }
-        
-        li.dataset.index = globalIndex;
 
+        li.dataset.index = globalIndex;
         const index = globalIndex;
         li.addEventListener("click", () =>
         {
@@ -53,6 +53,6 @@ function renderPlaylist(l, songsNew)
         songs.push(song);
         globalIndex++;
     });
-
-    return(songsNew);
+    //console.log(l.innerHTML);
+    return (songsNew);
 }

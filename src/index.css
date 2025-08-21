@@ -245,3 +245,30 @@ body {
 .playlist ul::-webkit-scrollbar-track {
   background: #181818;
 }
+
+:root{
+  /* tweak these to taste */
+  --col-title:  minmax(180px, 3fr);
+  --col-album:  minmax(140px, 2fr);
+  --col-artist: minmax(120px, 2fr);
+}
+
+.playlist li {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  column-gap: 16px;
+}
+
+.playlist li .title,
+.playlist li .album,
+.playlist li .artist {
+  flex: 1 1 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.playlist li .artist {
+  text-align: right;
+}

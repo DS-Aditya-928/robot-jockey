@@ -9,7 +9,6 @@ import { dirname } from 'path';
 import { parseFile } from 'music-metadata';
 import { performance } from 'node:perf_hooks';
 import Database from 'better-sqlite3'
-import { encode } from 'node:punycode';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const settings = loadSettings();
@@ -154,6 +153,13 @@ app.on('window-all-closed', () =>
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+function isValidPath(path)
+{
+  const validSuffix = ['.mp3', '.wav', '.flac', '.ogg', '.m4a'];
+  return validSuffix.some(suffix => path.toLowerCase().endsWith(suffix));
+}
+
+
 async function getMP3(rootFolder)
 {
   let results = [];
@@ -175,6 +181,12 @@ async function getMP3(rootFolder)
       else {
         try {
           //console.log(`Found MP3: ${metaData.common.title} by ${metaData.common.artist}`);
+          if(!isValidPath(fullPath))
+          {
+            console.log(`Invalid file type: ${fullPath}`);
+            continue;
+          }
+
           const metaData = await parseFile(fullPath);
           /*
           console.log({
