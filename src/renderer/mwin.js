@@ -85,10 +85,14 @@ playlist.addEventListener("click", (e) =>
     }
 });
 
-songInput.addEventListener("keypress", (e) =>
+songInput.addEventListener("keypress", async (e) =>
 {
     if (e.key === "Enter" && songInput.value.trim()) {
+        const inp = songInput.value.trim();
         songInput.value = "";
+        console.log("Searching for: " + inp);
+        await window.electronAPI.searchSongs(inp);
+        return;
     }
 });
 

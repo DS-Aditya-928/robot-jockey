@@ -104,3 +104,7 @@ RJBackend/rjbackend.exe
 
 *.db
 *.spec
+
+RJ/
+
+.vscode/*

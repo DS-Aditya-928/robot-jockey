@@ -4,6 +4,7 @@ import time as t
 import librosa
 import numpy as np
 from librosa.feature import melspectrogram, rms
+from librosa.feature.rhythm import tempo
 from librosa import power_to_db
 from onnxruntime import InferenceSession
 import soundfile as sf
@@ -34,6 +35,7 @@ def main():
             NUM_SAMPLES = SAMPLE_LEN * 44100
             sampleStack = []
             mseStack = []
+            bpmStack = []
 
             for k in range(0, len(samples), NUM_SAMPLES * 2):
                 s = samples[k:k+NUM_SAMPLES]
@@ -52,17 +54,21 @@ def main():
                     melDb = librosa.power_to_db(melSpectrogram, top_db=80)
                     sampleStack += [np.expand_dims(melDb, axis=0)]  # add mono channel
                     mseStack += [np.mean(librosa.feature.rms(y=np.array(s)))]
+                    bpmStack += [librosa.feature.rhythm.tempo(y = np.array(s), sr = 44100)]
+
                 del(s)
 
-            #print(len(sampleStack), flush=True)
+            print(len(sampleStack), flush=True)
+            print(len(bpmStack), flush = True)
             onnxruntime_outputs = ort_session.run(None, {'input':np.array(sampleStack)})[0]
             x = 0
             totalArousal = 0
             totalValence = 0
             for i in onnxruntime_outputs:
-                #print(f"At {x}s: {i} {mseStack[x // 5]}")
+                print(f"At {x}s: {i} {bpmStack[x // 5]}")
                 totalArousal += (i[0] * mseStack[x // 5])
                 totalValence += (i[1] * mseStack[x // 5])
+
                 x += 5
             t2 = t.time()
             avgArousal = (totalArousal / (x / 5)) * 100

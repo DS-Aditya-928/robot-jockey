@@ -9,5 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onLibraryUpdate: (callback) => ipcRenderer.on("library-updated", (_, data) => callback(data)),
 
   selectPath: () => ipcRenderer.invoke("select-path"),
-  scanLibrary: () => ipcRenderer.invoke("scan-library")
+  scanLibrary: () => ipcRenderer.invoke("scan-library"),
+
+  searchSongs: (query) => ipcRenderer.invoke("search-songs", query)
 });

@@ -83,9 +83,12 @@ body {
 
 /* Content (playlist) */
 .content {
-  grid-area: content;
+  flex: 1;
   padding: 20px;
-  overflow-y: auto;
+  overflow: hidden; /* no scrollbar */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .playlist h2 {
@@ -93,9 +96,12 @@ body {
 }
 
 .playlist ul {
-  list-style: none;
-  padding: 0;
+  flex: 1;
   margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .playlist li {
@@ -127,20 +133,36 @@ body {
 
 /* Player bar */
 .player {
-  grid-area: player;
+  position: fixed;
+  bottom: 0;
+  left: 220px; /* sidebar width */
+  right: 0;
+  height: 90px;
+
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 10px;
+
   background: linear-gradient(-45deg,
       #ff0099,
       #ffae00,
       #6a00f4,
-      /*#007bff,*/
       #8a2be2);
   background-size: 500% 500%;
   animation: gradientShift 15s ease infinite;
   box-shadow: 0 -2px 20px rgba(255, 0, 153, 0.4);
+  z-index: 1000;
+}
+
+.main {
+  position: absolute;
+  top: 0;
+  left: 220px; /* sidebar width */
+  right: 0;
+  bottom: 90px; /* height of the player bar */
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes gradientShift {

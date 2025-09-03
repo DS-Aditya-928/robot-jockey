@@ -9,6 +9,7 @@ import { dirname } from 'path';
 import { parseFile } from 'music-metadata';
 import { performance } from 'node:perf_hooks';
 import Database from 'better-sqlite3'
+import { pipeline } from '@xenova/transformers';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const settings = loadSettings();
@@ -31,6 +32,10 @@ musicDB.prepare(`
 
 let insertIntoDB = musicDB.prepare("INSERT INTO songs (title, artist, album, path, track, arousal, valence) VALUES (?, ?, ?, ?, ?, ?, ?)");
 let isInDB = musicDB.prepare("SELECT * FROM songs WHERE title = ? AND artist = ? AND album = ? AND track = ?");
+const embedder = await pipeline(
+  'feature-extraction',
+  'Xenova/all-MiniLM-L6-v2' // hosted by Xenova on HF
+);
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (electronSquirrelStartup) {
@@ -261,3 +266,51 @@ ipcMain.handle("scan-library", async () =>
   return getMP3(folderPath);
 });
 
+function filterByPercentile(criteria) {
+  const columns = Object.keys(criteria).filter(col => criteria[col] !== 'irrelevant');
+
+  if (!columns.length) return []; // nothing to filter
+
+  console.log('Filtering by criteria (cascading):', columns);
+
+  let filteredRows = musicDB.prepare('SELECT * FROM songs').all(); // start with all rows
+
+  const thresholds = {};
+
+  for (const col of columns) {
+    if (!filteredRows.length) break; // no rows left to filter
+
+    // Compute bottom and top thresholds from current subset
+    const sortedAsc = [...filteredRows].sort((a, b) => a[col] - b[col]);
+    const sortedDesc = [...filteredRows].sort((a, b) => b[col] - a[col]);
+    const offset = Math.floor(filteredRows.length / 3);
+
+    const bottom = sortedAsc[offset]?.[col];
+    const top = sortedDesc[offset]?.[col];
+
+    thresholds[col] = { bottom, top };
+
+    console.log(`Column: ${col}, Bottom threshold: ${bottom}, Top threshold: ${top}`);
+
+    // Filter rows for this column
+    const mode = criteria[col];
+    filteredRows = filteredRows.filter(row => {
+      if (mode === 'high') return row[col] >= top;
+      if (mode === 'med') return row[col] >= bottom && row[col] < top;
+      if (mode === 'low') return row[col] < bottom;
+      return true; // should not happen
+    });
+  }
+
+  return filteredRows;
+}
+
+
+ipcMain.handle("search-songs", async (event, query) =>
+{
+  console.log("Searching for: " + query);
+
+  const results = await filterByPercentile({ arousal: 'low', valence: 'low'});
+  console.log('Filtered rows:', results);
+
+});
