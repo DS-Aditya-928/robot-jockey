@@ -1,4 +1,4 @@
-function renderPlaylist(l, songsNew)
+function renderPlaylist(l, songsNew, random = false)
 {
 
     const curHTML = libraryList.querySelector(`li[data-index="${currentIndex}"]`);
@@ -8,7 +8,11 @@ function renderPlaylist(l, songsNew)
     }
     l.innerHTML = "";
 
-    songsNew.sort((a, b) =>
+    if( random ) {
+    }
+
+    else {
+        songsNew.sort((a, b) =>
     {
         const artistCmp = a.artist.split("/")[0].localeCompare(b.artist.split("/")[0]);
         if (artistCmp !== 0) return artistCmp;
@@ -16,7 +20,8 @@ function renderPlaylist(l, songsNew)
         const albumCmp = a.album.localeCompare(b.album);
         if (albumCmp !== 0) return albumCmp;
         return a.track - b.track;
-    });
+        });
+    }
     let globalIndex = 0;
     songsNew.forEach((song, i) =>
     {

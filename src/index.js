@@ -34,7 +34,7 @@ let insertIntoDB = musicDB.prepare("INSERT INTO songs (title, artist, album, pat
 let isInDB = musicDB.prepare("SELECT * FROM songs WHERE title = ? AND artist = ? AND album = ? AND track = ?");
 const embedder = await pipeline(
   'feature-extraction',
-  'Xenova/all-MiniLM-L6-v2' // hosted by Xenova on HF
+  'Xenova/all-mpnet-base-v2'
 );
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -100,15 +100,17 @@ let inpData = "";
 app.whenReady().then(() =>
 {
   createWindow();
-  const backendPath = path.join(__dirname, '../RJBackend/rjbackend/rjbackend.exe');
+  const backendPath = path.join(__dirname, '../dist/rjbackend/rjbackend.exe');
+  /*
   pyProc = spawn(backendPath, [], {
     stdio: ['pipe', 'pipe', 'pipe']
   });
-  /*
+  */
+  
   pyProc = spawn('python', [ path.join(__dirname, '../RJBackend/rjbackend.py')], {
     stdio: ['pipe', 'pipe', 'pipe']
   });
-  */
+  
   pyProc.stdout.on('data', (data) =>
   {
     data = data.toString().trim();
@@ -206,7 +208,7 @@ async function getMP3(rootFolder)
           let artist = metaData.common.artists ? metaData.common.artists.join("/") : "Unknown Artist";
           let album = metaData.common.album || "Unknown Album";
           let track = metaData.common.track ? metaData.common.track.no : 0;
-          console.log();
+          console.log(title);
           if (isInDB.get(title, artist, album, track) !== undefined) {
             //already in, populate from database
             const row = isInDB.get(title, artist, album, track);
@@ -223,7 +225,7 @@ async function getMP3(rootFolder)
 
             let [arousal, valence] = inpData.split(' ').map(s => parseFloat(s));
             //const [arousal, valence] = inpData.split(' ').map(Number);
-            console.log(metaData.common.title);
+            //console.log(metaData.common.title);
             console.log("Arousal: ", arousal, "Valence: ", valence);
             try {
               insertIntoDB.run(title, artist, album, fullPath, track, arousal, valence);
@@ -291,12 +293,13 @@ function filterByPercentile(criteria) {
     thresholds[col] = { bottom, top };
 
     console.log(`Column: ${col}, Bottom threshold: ${bottom}, Top threshold: ${top}`);
-
+    //console.log()
     // Filter rows for this column
     const mode = criteria[col];
+    console.log(`Applying mode: ${mode} on column: ${col}`);
     filteredRows = filteredRows.filter(row => {
       if (mode === 'high') return row[col] >= top;
-      if (mode === 'med') return row[col] >= bottom && row[col] < top;
+      if (mode === 'moderate') return row[col] >= bottom && row[col] < top;
       if (mode === 'low') return row[col] < bottom;
       return true; // should not happen
     });
@@ -305,12 +308,81 @@ function filterByPercentile(criteria) {
   return filteredRows;
 }
 
+function cosineSim(vecA, vecB) 
+{
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  //console.log(vecA.length, vecB.length);
+  for (let i = 0; i < vecA.length; i++) 
+  {
+    dotProduct += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+
+  return (dotProduct / (Math.sqrt(normA) * Math.sqrt(normB)));
+}
+
+function getMaxEntry(dict) {
+  const key = Object.keys(dict).reduce((a, b) =>
+    dict[a] > dict[b] ? a : b
+  );
+  return { key, value: dict[key] };
+}
+
+function getMinEntry(dict) {
+  const key = Object.keys(dict).reduce((a, b) =>
+    dict[a] < dict[b] ? a : b
+  );
+  return { key, value: dict[key] };
+}
 
 ipcMain.handle("search-songs", async (event, query) =>
 {
   console.log("Searching for: " + query);
+  let scores = {};
+  for(let mood of ['energy', 'mood'])
+  {
+    scores[mood] = {};
+    for(let adjective of ['high', 'moderate', 'low'] )
+    {
+      //console.log(`Embedding for: ${adjective + " " + mood} and ${query}`);
+      //console.log(cosineSim(((await embedder(adjective + " " + mood, { pooling: "mean", normalize: true })).data), (await embedder(query, { pooling: "mean", normalize: true })).data));      
+    
+      
+      scores[mood][adjective] = cosineSim(((await embedder(adjective + " " + mood, { pooling: "mean", normalize: true })).data), (await embedder(query, { pooling: "mean", normalize: true })).data);
+    }
+  }
+  
+  console.log(scores);
+  let searchDict = {}
+  for(let dbCol of ["arousal", "valence"])
+  {
+    let adj = "";
+    if(dbCol === "arousal")
+    {
+      adj = "energy";
+    }
 
-  const results = await filterByPercentile({ arousal: 'low', valence: 'low'});
-  console.log('Filtered rows:', results);
+    else if(dbCol === "valence")
+    {
+      adj = "mood";
+    }
 
+    let max = getMaxEntry(scores[adj]);
+    let min = getMinEntry(scores[adj]);
+    const threshold = 0.05;
+    console.log(`For ${dbCol}, max is ${max.key} (${max.value}), min is ${min.key} (${min.value})`);
+    if(Math.abs(max.value - min.value) > threshold)
+    {
+      searchDict[dbCol] = max.key;
+    }
+  }
+
+  console.log("Search dict:", searchDict);
+  const results = await filterByPercentile(searchDict);
+  //console.log('Filtered rows:', results);
+  const win = BrowserWindow.getAllWindows()[0];
+  win.webContents.send("playlist-updated", results.map(song => ({ title: song.title, artist: song.artist, album: song.album, src: song.path, track: song.track })));
 });

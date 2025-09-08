@@ -89,7 +89,7 @@ songInput.addEventListener("keypress", async (e) =>
 {
     if (e.key === "Enter" && songInput.value.trim()) {
         const inp = songInput.value.trim();
-        songInput.value = "";
+        //songInput.value = "";
         console.log("Searching for: " + inp);
         await window.electronAPI.searchSongs(inp);
         return;
@@ -107,7 +107,7 @@ audio.addEventListener("ended", () =>
 window.electronAPI.onPlaylistUpdate((newPlaylist) =>
 {
     //songs = newPlaylist;
-    songs = renderPlaylist(playlist, newPlaylist);
+    songs = renderPlaylist(playlist, newPlaylist, random=true);
 });
 
 window.electronAPI.onLibraryUpdate((newLibrary) =>

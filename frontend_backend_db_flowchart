@@ -1,0 +1,9 @@
+digraph {
+	rankdir=LR size="8,5"
+	Frontend [fillcolor=lightblue shape=rectangle style=filled]
+	Backend [fillcolor=lightgreen shape=rectangle style=filled]
+	Database [fillcolor=lightgray shape=cylinder style=filled]
+	Frontend -> Backend [dir=both]
+	Backend -> Database
+	Frontend -> Database
+}

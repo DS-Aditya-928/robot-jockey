@@ -31,6 +31,7 @@
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^10.1.0",
     "music-metadata": "^11.8.2",
+    "node-nlp": "^5.0.0-alpha.5",
     "onnxruntime-node": "^1.22.0-rev"
   },
   "devDependencies": {

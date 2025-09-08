@@ -58,16 +58,16 @@ def main():
 
                 del(s)
 
-            print(len(sampleStack), flush=True)
-            print(len(bpmStack), flush = True)
+            #print(len(sampleStack), flush=True)
+            #print(len(bpmStack), flush = True)
             onnxruntime_outputs = ort_session.run(None, {'input':np.array(sampleStack)})[0]
             x = 0
             totalArousal = 0
             totalValence = 0
             for i in onnxruntime_outputs:
-                print(f"At {x}s: {i} {bpmStack[x // 5]}")
-                totalArousal += (i[0] * mseStack[x // 5])
-                totalValence += (i[1] * mseStack[x // 5])
+                #print(f"At {x}s: {i} {bpmStack[x // 5]}")
+                totalArousal += i[0]# * mseStack[x // 5])
+                totalValence += i[1]# * mseStack[x // 5])
 
                 x += 5
             t2 = t.time()
